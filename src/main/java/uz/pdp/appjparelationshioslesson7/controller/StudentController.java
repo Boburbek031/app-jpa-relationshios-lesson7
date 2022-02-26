@@ -5,8 +5,15 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.bind.annotation.*;
+import uz.pdp.appjparelationshioslesson7.entity.Address;
+import uz.pdp.appjparelationshioslesson7.entity.Groups;
 import uz.pdp.appjparelationshioslesson7.entity.Student;
+import uz.pdp.appjparelationshioslesson7.payload.StudentDto;
+import uz.pdp.appjparelationshioslesson7.repository.AddressRepository;
+import uz.pdp.appjparelationshioslesson7.repository.GroupsRepository;
 import uz.pdp.appjparelationshioslesson7.repository.StudentRepo;
+
+import java.util.Optional;
 
 @RestController
 @RequestMapping("/student")
@@ -14,6 +21,12 @@ public class StudentController {
 
     @Autowired
     StudentRepo studentRepo;
+
+    @Autowired
+    GroupsRepository groupsRepository;
+
+    @Autowired
+    AddressRepository addressRepository;
 
 
     // 1. Vazirlik
@@ -45,5 +58,53 @@ public class StudentController {
     }
 
 
+    // Faculty Dekani Uchun:
+    @GetMapping("/forFacultyHead/{facultyId}")
+    public Page<Student> getStudentsForFacultyHead(@PathVariable Long facultyId, @RequestParam int page) {
+        Pageable pageable = PageRequest.of(page, 10);
+        Page<Student> studentPage = studentRepo.findAllByGroup_FacultyId(facultyId, pageable);
+        return studentPage;
+    }
 
+    // Group Head Uchun:
+    @GetMapping("/forGroupHead/{groupId}")
+    public Page<Student> getStudentsByGroupId(@PathVariable Long groupId, @RequestParam int page) {
+        Pageable pageable = PageRequest.of(page, 10);
+        Page<Student> studentPage = studentRepo.findAllByGroupId(groupId, pageable);
+        return studentPage;
+    }
+
+
+    @PostMapping("addOrEdit")
+    public String addStudent(@RequestBody StudentDto dto) {
+        Student student = new Student();
+        if (dto.getId() != null) {
+            student = studentRepo.getById(dto.getId());
+        }
+        Optional<Address> optionalAddress = addressRepository.findById(dto.getAddressId());
+        if (!optionalAddress.isPresent()) {
+            return "Address not Found";
+        }
+        Optional<Groups> optionalGroup = groupsRepository.findById(dto.getGroupId());
+        if (!optionalGroup.isPresent()) {
+            return "Group not found!";
+        }
+        student.setFirstName(dto.getFirstName());
+        student.setLastName(dto.getLastName());
+        student.setAddress(optionalAddress.get());
+        student.setGroup(optionalGroup.get());
+        studentRepo.save(student);
+        return dto.getId() != null ? "Edited" : "Saved";
+    }
+
+
+    @DeleteMapping("/delete/{id}")
+    public String deleteStudent(@PathVariable Long id) {
+        try {
+            studentRepo.deleteById(id);
+            return "Deleted!";
+        } catch (Exception e) {
+            return "Error in Deleting!";
+        }
+    }
 }

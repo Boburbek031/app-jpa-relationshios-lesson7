@@ -18,4 +18,8 @@ public interface StudentRepo extends JpaRepository<Student, Long> {
     Page<Student> findAllByGroup_Faculty_University_Id(Long group_faculty_university_id, Pageable pageable);
 
 
+    Page<Student> findAllByGroup_FacultyId(Long group_faculty_id, Pageable pageable);
+
+
+    Page<Student> findAllByGroupId(Long group_id, Pageable pageable);
 }
